@@ -57,6 +57,9 @@ RUN conda install cutadapt
 #create cutadapt venv
 RUN conda create -n cutadaptenv cutadapt
 
+RUN chown -R rstudio /root/miniconda3
+RUN chown -R rstudio /root/.conda
+
 ENV PASSWORD "rstudio1"
 RUN bash /etc/cont-init.d/userconf
 

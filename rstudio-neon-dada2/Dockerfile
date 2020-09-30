@@ -33,15 +33,29 @@ RUN R -e 'install.packages(c("BiocManager","neonUtilities", "vegan", "zetadiv", 
 # install dada2 with biocmanager version 3.11
 RUN R -e 'BiocManager::install("dada2", version = "3.11")'
 
-# install python 3 setup utilities
+# install python 3 setup utilities pip3
 RUN apt-get install -y python3-setuptools python3-pip
 
-# install cutadapt 2.1
-RUN python3 -m pip install --user --upgrade cutadapt
+# install miniconda
+ENV PATH="/root/miniconda3/bin:${PATH}"
+ARG PATH="/root/miniconda3/bin:${PATH}"
+RUN curl -O https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+    && mkdir /root/.conda \
+    && bash Miniconda3-latest-Linux-x86_64.sh -b \
+    && rm -f Miniconda3-latest-Linux-x86_64.sh
 
-# create cutadapt bash alias in container
-RUN echo 'alias cutadapt="~/.local/bin/cutadapt"' >> ~/.bashrc
-
+# update miniconda3
+RUN conda update -n base -c defaults conda
+# add default channels
+RUN conda config --add channels defaults
+# add bioconda channels
+RUN conda config --add channels bioconda
+# add conda-forge channels
+RUN conda config --add channels conda-forge
+#install cutadapt via conda
+RUN conda install cutadapt
+#create cutadapt venv
+RUN conda create -n cutadaptenv cutadapt
 
 ENV PASSWORD "rstudio1"
 RUN bash /etc/cont-init.d/userconf

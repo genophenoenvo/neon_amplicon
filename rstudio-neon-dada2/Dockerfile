@@ -34,10 +34,13 @@ RUN R -e 'install.packages(c("BiocManager","neonUtilities", "vegan", "zetadiv", 
 RUN R -e 'BiocManager::install("dada2", version = "3.11")'
 
 # install python 3 setup utilities
-RUN apt install -y python3-setuptools
+RUN apt-get install -y python3-setuptools python3-pip
 
 # install cutadapt 2.1
-RUN apt install -y cutadapt
+RUN python3 -m pip install --user --upgrade cutadapt
+
+# create cutadapt bash alias in container
+RUN echo 'alias cutadapt="~/.local/bin/cutadapt"' >> ~/.bashrc
 
 
 ENV PASSWORD "rstudio1"

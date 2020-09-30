@@ -4,9 +4,9 @@ FROM rocker/verse:4.0.0-ubuntu18.04
 
 MAINTAINER "Ryan Bartelme rbartelme@arizona.edu"
 # This image builds off the rocker tidyverse image of rstudio
-# and adds: cutadapt for primer trimming fastq files,, 
+# and adds: cutadapt for primer trimming fastq files,,
 # as well as NEON api access to download fastq files,
-# and dada2 for generating ASV's from fastqs 
+# and dada2 for generating ASV's from fastqs
 
 ## Install CyVerse VICE Depends
 ## lsb is deprecated
@@ -27,17 +27,17 @@ RUN chmod a+x /usr/bin/gomplate
 # provide read and write access to Rstudio users for default R library location
 RUN chmod -R 777 /usr/local/lib/R/site-library
 
-# install python 3 sestup utilities
-RUN apt install -y python3-setuptools
-
-# install cutadapt 2.1
-RUN apt install -y cutadapt
-
 # install additonal R libraries
 RUN R -e 'install.packages(c("BiocManager","neonUtilities", "vegan", "zetadiv", "deblur", "decontam"), dependencies = TRUE)'
 
 # install dada2 with biocmanager version 3.11
 RUN R -e 'BiocManager::install("dada2", version = "3.11")'
+
+# install python 3 setup utilities
+RUN apt install -y python3-setuptools
+
+# install cutadapt 2.1
+RUN apt install -y cutadapt
 
 
 ENV PASSWORD "rstudio1"

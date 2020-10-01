@@ -33,32 +33,33 @@ RUN R -e 'install.packages(c("BiocManager","neonUtilities", "vegan", "zetadiv", 
 # install dada2 with biocmanager version 3.11
 RUN R -e 'BiocManager::install("dada2", version = "3.11")'
 
+
 # install python 3 setup utilities pip3
 RUN apt-get install -y python3-setuptools python3-pip
 
+USER rstudio
+WORKDIR /home/rstudio
+
 # install miniconda
-ENV PATH="/root/miniconda3/bin:${PATH}"
-ARG PATH="/root/miniconda3/bin:${PATH}"
+ENV PATH="/home/rstudio/miniconda3/bin:${PATH}"
+ARG PATH="/home/rstudio/miniconda3/bin:${PATH}"
 RUN curl -O https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
-    && mkdir /root/.conda \
+    && mkdir /home/rstudio/.conda \
     && bash Miniconda3-latest-Linux-x86_64.sh -b \
     && rm -f Miniconda3-latest-Linux-x86_64.sh
 
 # update miniconda3
-RUN conda update -n base -c defaults conda
-# add default channels
-RUN conda config --add channels defaults
-# add bioconda channels
-RUN conda config --add channels bioconda
-# add conda-forge channels
-RUN conda config --add channels conda-forge
-#install cutadapt via conda
-RUN conda install cutadapt
-#create cutadapt venv
-RUN conda create -n cutadaptenv cutadapt
+RUN conda init bash \
+  && . ~/.bashrc \
+  && conda update -n base -c defaults conda \
+  && conda config --add channels defaults \
+  && conda config --add channels bioconda \
+  && conda config --add channels conda-forge \
+  && conda install cutadapt \
+  && echo 'alias cutadapt = "conda run --prefix '/home/rstudio/miniconda3/envs/cutadaptenv' cutadapt"'
 
-RUN chown -R rstudio /root/miniconda3
-RUN chown -R rstudio /root/.conda
+USER root
+WORKDIR /root
 
 ENV PASSWORD "rstudio1"
 RUN bash /etc/cont-init.d/userconf

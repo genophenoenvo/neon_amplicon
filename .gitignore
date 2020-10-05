@@ -1,3 +1,4 @@
 *.fastq
 .Renviron
 *.gz
+.Rproj.user

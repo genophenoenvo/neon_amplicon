@@ -3,6 +3,8 @@
 
 
 library(neonUtilities)
+library(tidyverse)
+
 # Set output directory, relative path to Rproj
 outDir <- "~/NEON_metagenomics/test_out/"
 
@@ -36,7 +38,6 @@ length(marker_genes$mmg_soilPcrAmplification_16S$forwardPrimer)
 forward_primer_dist <- as.data.frame(table(as.vector(marker_genes$mmg_soilPcrAmplification_16S$forwardPrimer)))
 primer_set <- c("Pro341Fi","Mislabeled_ITS", "New_EMP")
 f_prime <- cbind(forward_primer_dist, primer_set)
-
 p<-ggplot(data=f_prime, aes(x=primer_set, y=Freq)) +
   geom_bar(stat = "identity", fill="steelblue")+
   theme_minimal()+theme(axis.text.x = element_text(angle = 90, hjust = 1))+
@@ -45,6 +46,13 @@ p
 
 length(marker_genes$mmg_soilPcrAmplification_16S$reversePrimer)
 reverse_primer_dist <- as.data.frame(table(as.vector(marker_genes$mmg_soilPcrAmplification_16S$reversePrimer)))
+
+#filter 16S data for CCTACGGGNBGCASCAG
+
+# ITS data only has one primer set
+unique(marker_genes$mmg_soilPcrAmplification_ITS$forwardPrimer)
+
+
 
 
 marker_genes_dna <- marker_genes$mmg_soilDnaExtraction   # read in soilDnaExtraction L1 data

@@ -3,8 +3,6 @@
 
 
 library(neonUtilities)
-library(tidyverse)
-library(gridExtra)
 # Set output directory, relative path to Rproj
 outDir <- "~/NEON_metagenomics/test_out/"
 
@@ -19,19 +17,18 @@ outDir <- "~/NEON_metagenomics/test_out/"
 
 # Set API key
 NEON_TOKEN <- Sys.getenv(x = "NEON_TOKEN")
+#set timezone 
+#options(readr.default_locale=readr::locale(tz="USA/Mountain"))
 
 # Fetch metadata for shotgun metagenomes
-sg_met <- loadByProduct(startdate = "2013-06", enddate = "2019-09",
-                       dpID = 'DP1.10107.001', package = 'expanded',
-                       token = NEON_TOKEN, check.size = FALSE, nCores = 3)
-
-
-
+#sg_met <- loadByProduct(startdate = "2013-06", enddate = "2019-09",
+#                       dpID = 'DP1.10107.001', package = 'expanded',
+#                       token = NEON_TOKEN, check.size = FALSE, nCores = 3)
 
 # Fetch soil microbe marker gene sequence data
 marker_genes <- loadByProduct(startdate = "2013-06", enddate = "2019-09",
                             dpID = 'DP1.10108.001', package = 'expanded', 
-                            token = NEON_TOKEN, check.size = FALSE, nCores = 3)
+                            token = NEON_TOKEN, check.size = FALSE, nCores = 15)
 
 unique(unique(marker_genes$mmg_soilPcrAmplification_16S$forwardPrimer))
 # "GTGYCAGCMGCCGCGGTAA" is the modified earth microbiome project forward primer Parada, et al. 2016

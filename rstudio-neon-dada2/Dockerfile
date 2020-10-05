@@ -34,8 +34,8 @@ RUN R -e 'install.packages(c("BiocManager","neonUtilities", "vegan", "zetadiv", 
 RUN R -e 'BiocManager::install("dada2", version = "3.11")'
 
 
-# install python 3 setup utilities pip3
-RUN apt-get install -y python3-setuptools python3-pip
+# install python 3 setup utilities pip3 and tzdata
+RUN apt-get install -y python3-setuptools python3-pip tzdata
 
 USER rstudio
 WORKDIR /home/rstudio

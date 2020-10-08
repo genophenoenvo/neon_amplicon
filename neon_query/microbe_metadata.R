@@ -19,39 +19,79 @@ outDir <- "~/NEON_metagenomics/test_out/"
 
 # Set API key
 NEON_TOKEN <- Sys.getenv(x = "NEON_TOKEN")
-#set timezone 
-#options(readr.default_locale=readr::locale(tz="USA/Mountain"))
-
-# Fetch metadata for shotgun metagenomes
-#sg_met <- loadByProduct(startdate = "2013-06", enddate = "2019-09",
-#                       dpID = 'DP1.10107.001', package = 'expanded',
-#                       token = NEON_TOKEN, check.size = FALSE, nCores = 3)
 
 # Fetch soil microbe marker gene sequence data
 marker_genes <- loadByProduct(startdate = "2013-06", enddate = "2019-09",
                             dpID = 'DP1.10108.001', package = 'expanded', 
                             token = NEON_TOKEN, check.size = FALSE, nCores = 15)
+#==================================================================================
+# 16S rRNA gene PCR primer diagnostics
+#==================================================================================
 
+#get unique forward primers
 unique(unique(marker_genes$mmg_soilPcrAmplification_16S$forwardPrimer))
 # "GTGYCAGCMGCCGCGGTAA" is the modified earth microbiome project forward primer Parada, et al. 2016
+
+#make counts by 16S rRNA gene primer set, label them, barplot to see distribution of data 
 length(marker_genes$mmg_soilPcrAmplification_16S$forwardPrimer)
+#count each unique primer in the dataset
 forward_primer_dist <- as.data.frame(table(as.vector(marker_genes$mmg_soilPcrAmplification_16S$forwardPrimer)))
 primer_set <- c("Pro341Fi","Mislabeled_ITS", "New_EMP")
+
+#bind forward primer counts into a new dataframe to plot
 f_prime <- cbind(forward_primer_dist, primer_set)
+
+#ggplot call for primer data
 p<-ggplot(data=f_prime, aes(x=primer_set, y=Freq)) +
   geom_bar(stat = "identity", fill="steelblue")+
   theme_minimal()+theme(axis.text.x = element_text(angle = 90, hjust = 1))+
   xlab(NULL)+labs(title = "Forward Primer Distribution")
 p
 
-length(marker_genes$mmg_soilPcrAmplification_16S$reversePrimer)
-reverse_primer_dist <- as.data.frame(table(as.vector(marker_genes$mmg_soilPcrAmplification_16S$reversePrimer)))
+#filter 16S data for CCTACGGGNBGCASCAG Pro341Fi, which targets the V3-V4 regions
+#of the 16S rRNA gene
+# ITS data only has one primer set so the rest of the data in the list should be
+  # filtered by the DNA sample ID's left in the 16S dataframe
+#==============================================================================
+# Filter Data by DNAsampleID's that match the 16S primers of interest
+#==============================================================================
 
-#filter 16S data for CCTACGGGNBGCASCAG
+#Make a list to catch output of the multi-step 
+    # filtering (cut last 3 tables from original list)
+processed_marker_genes <- vector(mode = "list", length = 6)
 
-# ITS data only has one primer set
-unique(marker_genes$mmg_soilPcrAmplification_ITS$forwardPrimer)
+#filter and store 16S Pcr Amplification data frame
+processed_marker_genes[[4]]<- marker_genes$mmg_soilPcrAmplification_16S[marker_genes$mmg_soilPcrAmplification_16S$forwardPrimer == "CCTACGGGNBGCASCAG",]
 
+amp_meta <- c(1, 2, 3, 5, 6)
+for(i in amp_meta){
+  processed_marker_genes[[i]]<- marker_genes[[i]][marker_genes[[i]]$dnaSampleID
+      %in% unique(processed_marker_genes[[4]]$dnaSampleID),]
+}
+names(processed_marker_genes) <- names(marker_genes)[1:6]
+
+unique(processed_marker_genes$mmg_soilMarkerGeneSequencing_16S$sequencingFacilityID)
+n2tab_count <-function(n){
+  df <- as.data.frame(table(as.vector(n)))
+  return(df)}
+
+seq_facility16S <- n2tab_count(processed_marker_genes$mmg_soilMarkerGeneSequencing_16S$sequencingFacilityID)
+
+seq_facilityITS <- n2tab_count(processed_marker_genes$mmg_soilMarkerGeneSequencing_ITS$sequencingFacilityID)
+
+
+
+seqtype <- n2tab_count()
+
+length(grep("marker gene|marker gene and metagenomics",
+            processed_marker_genes$mmg_soilDnaExtraction$sequenceAnalysisType))
+unique(processed_marker_genes$mmg_soilDnaExtraction$sequenceAnalysisType)
+
+length(unique(processed_marker_genes$mmg_soilDnaExtraction$collectDate))
+length(unique(processed_marker_genes$mmg_soilMarkerGeneSequencing_16S$collectDate))
+length(unique(processed_marker_genes$mmg_soilMarkerGeneSequencing_ITS$collectDate))
+# need to remove Argonne sequencing
+# need to filter again by ITS collection date and plotID's
 
 
 

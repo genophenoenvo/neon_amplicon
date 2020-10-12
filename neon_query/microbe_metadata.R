@@ -24,6 +24,12 @@ NEON_TOKEN <- Sys.getenv(x = "NEON_TOKEN")
 marker_genes <- loadByProduct(startdate = "2013-06", enddate = "2019-09",
                             dpID = 'DP1.10108.001', package = 'expanded', 
                             token = NEON_TOKEN, check.size = FALSE, nCores = 15)
+
+# debugging function to count data elements
+n2tab_count <-function(n){
+  df <- as.data.frame(table(as.vector(n)))
+  return(df)}
+
 #==================================================================================
 # 16S rRNA gene PCR primer diagnostics
 #==================================================================================
@@ -70,18 +76,55 @@ for(i in amp_meta){
 }
 names(processed_marker_genes) <- names(marker_genes)[1:6]
 
-unique(processed_marker_genes$mmg_soilMarkerGeneSequencing_16S$sequencingFacilityID)
-n2tab_count <-function(n){
-  df <- as.data.frame(table(as.vector(n)))
-  return(df)}
+# get metadata for sequencing only done at Battelle 
+neon_marker_genes <- vector(mode = "list", length = 6)
+for(i in 1:length(neon_marker_genes)){
+neon_marker_genes[[i]] <- processed_marker_genes[[i]][processed_marker_genes[[i]]$laboratoryName != "Argonne National Laboratory",]
+}
+names(neon_marker_genes) <- names(processed_marker_genes)
 
-seq_facility16S <- n2tab_count(processed_marker_genes$mmg_soilMarkerGeneSequencing_16S$sequencingFacilityID)
+# filter down to DNA samples with ITS sequences
+its_filtered_markers <- vector(mode = "list", length = 6)
+for(i in 1:length(its_filtered_markers)){
+  its_filtered_markers[[i]] <- neon_marker_genes[[i]][neon_marker_genes[[i]]$dnaSampleID %in% neon_marker_genes$mmg_soilMarkerGeneSequencing_ITS$dnaSampleID,]
+}
+names(its_filtered_markers) <- names(neon_marker_genes)
 
-seq_facilityITS <- n2tab_count(processed_marker_genes$mmg_soilMarkerGeneSequencing_ITS$sequencingFacilityID)
+# count each DNA sample debug
+dna_sample_debug <- vector(mode = "list", length = length(its_filtered_markers))
+
+for(i in 1:length(its_filtered_markers)){
+  dna_sample_debug[[i]] <- n2tab_count(its_filtered_markers[[i]]$dnaSampleID)
+}
+names(dna_sample_debug) <- names(its_filtered_markers)
+
+#sanity check for duplicates
+
+# mmg_soilDnaExtraction duplicates
+length(which(dna_sample_debug[[1]]$Freq > 1)) # 3 
+length(unique(its_filtered_markers[[1]]$collectDate))
+# mmg_soilMarkerGeneSequencing_16S duplicates
+length(which(dna_sample_debug[[2]]$Freq > 1)) # 54 
+
+write.table(x = its_filtered_markers[[1]], 
+            file = "~/neon_amplicon/amplicon_sites_ver1.txt", sep = "\t")
+
+# mmg_soilMarkerGeneSequencing_ITS
+length(which(dna_sample_debug[[3]]$Freq > 1)) # 2
+
+# mmg_soilPcrAmplification_16S
+length(which(dna_sample_debug[[4]]$Freq > 1)) # 385
+
+# mmg_soilPcrAmplification_ITS
+length(which(dna_sample_debug[[5]]$Freq > 1)) # 794
+
+# mmg_soilRawDataFiles - less meaningful due to paired end reads
+length(which(dna_sample_debug[[6]]$Freq > 2)) # 6147
 
 
-
-seqtype <- n2tab_count()
+#===============================================================================
+# Lee Stanish's Code Base Starts Here
+#===============================================================================
 
 length(grep("marker gene|marker gene and metagenomics",
             processed_marker_genes$mmg_soilDnaExtraction$sequenceAnalysisType))

@@ -105,8 +105,12 @@ for(i in 1:length(its_filtered_markers)){
 write.csv(marker_genes$variables_10108, file = "~/fastq/variables.csv", row.names=FALSE)
 
 #get fastq files
-zipsByURI(filepath = "~/fastq", savepath = "~/fastq",
+zipsByURI(filepath = "/home/rstudio/fastq", savepath = "/home/rstudio/fastq",
           unzip = FALSE, saveZippedFiles = TRUE)
+
+# move folder with irods to cache fastq data on CyVerse data store
+# url will need updating
+system('iput -r /home/rstudio/fastq')
 
 #==============================================================================
 #   Code Debugging Section

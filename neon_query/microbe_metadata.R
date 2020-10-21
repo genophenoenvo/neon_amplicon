@@ -5,8 +5,6 @@
 library(neonUtilities)
 library(tidyverse)
 
-# Set output directory, relative path to Rproj
-outDir <- "~/NEON_metagenomics/test_out/"
 
 ##### NOTES #######
 # This will need to filter by the sites that we are interested in *BEFORE* 
@@ -24,11 +22,6 @@ NEON_TOKEN <- Sys.getenv(x = "NEON_TOKEN")
 marker_genes <- loadByProduct(startdate = "2013-06", enddate = "2019-09",
                             dpID = 'DP1.10108.001', package = 'expanded', 
                             token = NEON_TOKEN, check.size = FALSE, nCores = 15)
-
-# debugging function to count data elements
-n2tab_count <-function(n){
-  df <- as.data.frame(table(as.vector(n)))
-  return(df)}
 
 #==================================================================================
 # 16S rRNA gene PCR primer diagnostics
@@ -94,27 +87,31 @@ names(its_filtered_markers) <- names(neon_marker_genes)
 system("mkdir ~/fastq") #fastq folder in home of rstudio user
 system("mkdir ~/fastq/its") #its fastq directory
 system("mkdir ~/fastq/16s") #16s fastq directory
-
+system("mkdir ~/test")
 #write out tables from ITS filtered data
 for(i in 1:length(its_filtered_markers)){
-  write.csv(its_filtered_markers[i],
-            file = paste0('~/fastq/', names(its_filtered_markers)[i],'.csv'),
+  write.csv(its_filtered_markers[[i]][1:5,],
+            file = paste0('~/test/', names(its_filtered_markers)[[i]],'.csv'),
             row.names = FALSE)
 }
 #write out variables file
-write.csv(marker_genes$variables_10108, file = "~/fastq/variables.csv", row.names=FALSE)
+write.csv(marker_genes$variables_10108, file = "~/test/variables.csv", row.names=FALSE)
 
 #get fastq files
-zipsByURI(filepath = "/home/rstudio/fastq", savepath = "/home/rstudio/fastq",
-          unzip = FALSE, saveZippedFiles = TRUE)
+zipsByURI(filepath = "/home/rstudio/test", savepath = "/home/rstudio/test",
+          unzip = FALSE, check.size = FALSE, saveZippedFiles = TRUE)
 
 # move folder with irods to cache fastq data on CyVerse data store
 # url will need updating
-system('iput -r /home/rstudio/fastq')
+system('iput -rf /home/rstudio/fastq')
 
 #==============================================================================
 #   Code Debugging Section
 #==============================================================================
+# debugging function to count data elements
+n2tab_count <-function(n){
+  df <- as.data.frame(table(as.vector(n)))
+  return(df)}
 
 # count each DNA sample debug
 dna_sample_debug <- vector(mode = "list", length = length(its_filtered_markers))

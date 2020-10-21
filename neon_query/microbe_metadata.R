@@ -90,6 +90,28 @@ for(i in 1:length(its_filtered_markers)){
 }
 names(its_filtered_markers) <- names(neon_marker_genes)
 
+#make output directories
+system("mkdir ~/fastq") #fastq folder in home of rstudio user
+system("mkdir ~/fastq/its") #its fastq directory
+system("mkdir ~/fastq/16s") #16s fastq directory
+
+#write out tables from ITS filtered data
+for(i in 1:length(its_filtered_markers)){
+  write.csv(its_filtered_markers[i],
+            file = paste0('~/fastq/', names(its_filtered_markers)[i],'.csv'),
+            row.names = FALSE)
+}
+#write out variables file
+write.csv(marker_genes$variables_10108, file = "~/fastq/variables.csv", row.names=FALSE)
+
+#get fastq files
+zipsByURI(filepath = "~/fastq", savepath = "~/fastq",
+          unzip = FALSE, saveZippedFiles = TRUE)
+
+#==============================================================================
+#   Code Debugging Section
+#==============================================================================
+
 # count each DNA sample debug
 dna_sample_debug <- vector(mode = "list", length = length(its_filtered_markers))
 
@@ -125,6 +147,10 @@ length(which(dna_sample_debug[[6]]$Freq > 2)) # 6147
 #===============================================================================
 # Lee Stanish's Code Base Starts Here
 #===============================================================================
+## Grab soil microbe data ##
+L1mic <- loadByProduct(startdate = "2016-09", enddate = "2017-01", dpID = 'DP1.10108.001', 
+                       package = 'expanded', check.size = FALSE)
+L1mic.dna <- L1mic$mmg_soilDnaExtraction   # read in soilDnaExtraction L1 data
 
 length(grep("marker gene|marker gene and metagenomics",
             processed_marker_genes$mmg_soilDnaExtraction$sequenceAnalysisType))

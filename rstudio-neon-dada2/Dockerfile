@@ -27,15 +27,18 @@ RUN chmod a+x /usr/bin/gomplate
 # provide read and write access to Rstudio users for default R library location
 RUN chmod -R 777 /usr/local/lib/R/site-library
 
+#install rhdf5 for neonUtilities
+RUN R -e 'BiocManager::install("rhdf5")'
+
 # install additonal R libraries
-RUN R -e 'install.packages(c("BiocManager","neonUtilities", "vegan", "zetadiv", "deblur", "decontam"), dependencies = TRUE)'
+RUN R -e 'install.packages(c("BiocManager","neonUtilities", "vegan", "zetadiv", \
+"deblur", "decontam"), repos = "https://cloud.r-project.org/", dependencies = TRUE)'
 
 # install dada2 with biocmanager version 3.11
 RUN R -e 'BiocManager::install("dada2", version = "3.11")'
-
-
-# install python 3 setup utilities pip3 and tzdata
-RUN apt-get install -y python3-setuptools python3-pip tzdata
+RUN R -e 'BiocManager::install("DESeq2")'
+RUN R -e 'BiocManager::install("DECIPHER")'
+RUN R -e 'BiocManager::install("phyloseq")'
 
 USER rstudio
 WORKDIR /home/rstudio

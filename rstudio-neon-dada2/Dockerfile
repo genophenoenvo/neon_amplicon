@@ -10,7 +10,7 @@ MAINTAINER "Ryan Bartelme rbartelme@arizona.edu"
 
 ## Install CyVerse VICE Depends
 ## lsb is deprecated
-RUN apt-get update && apt-get install -y lsb-base lsb-release wget apt-transport-https python2.7 python-requests curl supervisor nginx gnupg2
+RUN apt-get update && apt-get install -y lsb-base lsb-release wget apt-transport-https python2.7 python-requests curl supervisor nginx gnupg2 tzdata
 
 RUN apt-get install libfuse2
 

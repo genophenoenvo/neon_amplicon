@@ -10,7 +10,7 @@ MAINTAINER "Ryan Bartelme rbartelme@arizona.edu"
 
 ## Install CyVerse VICE Depends
 ## lsb is deprecated
-RUN apt-get update && apt-get install -y lsb-base lsb-release wget apt-transport-https python2.7 python-requests curl supervisor nginx gnupg2 tzdata
+RUN apt-get update && apt-get install -y lsb-base lsb-release wget apt-transport-https python2.7 python-requests curl supervisor nginx gnupg2
 
 RUN apt-get install libfuse2
 
@@ -39,6 +39,9 @@ RUN R -e 'BiocManager::install("dada2", version = "3.11")'
 RUN R -e 'BiocManager::install("DESeq2")'
 RUN R -e 'BiocManager::install("DECIPHER")'
 RUN R -e 'BiocManager::install("phyloseq")'
+
+# install python 3 setup utilities pip3 and tzdata
+RUN apt-get install -y dialog apt-utils tzdata
 
 USER rstudio
 WORKDIR /home/rstudio

@@ -56,11 +56,14 @@ for(i in 1:length(its_filtered_markers)){
 names(its_filtered_markers) <- names(neon_marker_genes)
 
 #make output directories
+if(dir.exists("~/fastq")){
+  print("Warning: directory ~/fastq/ and subdirectories already exist!")
+}else{
 system("mkdir ~/fastq") #fastq folder in home of rstudio user
 system("mkdir ~/fastq/its") #its fastq directory
 system("mkdir ~/fastq/16s") #16s fastq directory
-
-
+system("mkdir ~/fastq/18s") #18s fastq directory
+}
 #write out tables from ITS filtered data
 for(i in 1:length(its_filtered_markers)){
   write.csv(its_filtered_markers[[i]],
@@ -76,7 +79,8 @@ zipsByURI(filepath = "/home/rstudio/fastq", savepath = "/home/rstudio/fastq",
 
 # move folder with irods to cache fastq data on CyVerse data store
 # url will need updating
-system('iput -rf /home/rstudio/fastq')
+system('imkdir fastq')
+system('iput -rf /home/rstudio/fastq /iplant/home/rbartelme/fastq')
 
 #==================================================================================
 # 16S rRNA gene PCR primer diagnostics

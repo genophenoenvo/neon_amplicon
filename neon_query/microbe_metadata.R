@@ -80,7 +80,7 @@ zipsByURI(filepath = "/home/rstudio/fastq", savepath = "/home/rstudio/fastq",
 # move folder with irods to cache fastq data on CyVerse data store
 # url will need updating
 system('imkdir fastq')
-system('iput -rf /home/rstudio/fastq /iplant/home/rbartelme/fastq')
+system('iput -KPbvrf /home/rstudio/fastq /iplant/home/rbartelme/fastq')
 
 #==================================================================================
 # 16S rRNA gene PCR primer diagnostics

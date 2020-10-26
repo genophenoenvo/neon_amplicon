@@ -64,11 +64,11 @@ system("mkdir ~/fastq/16s") #16s fastq directory
 #write out tables from ITS filtered data
 for(i in 1:length(its_filtered_markers)){
   write.csv(its_filtered_markers[[i]][1:5,],
-            file = paste0('~/test/', names(its_filtered_markers)[[i]],'.csv'),
+            file = paste0('~/fastq/', names(its_filtered_markers)[[i]],'.csv'),
             row.names = FALSE)
 }
 #write out variables file
-write.csv(marker_genes$variables_10108, file = "~/test/variables.csv", row.names=FALSE)
+write.csv(marker_genes$variables_10108, file = "~/fastq/variables.csv", row.names=FALSE)
 
 #get fastq files
 zipsByURI(filepath = "/home/rstudio/test", savepath = "/home/rstudio/test",

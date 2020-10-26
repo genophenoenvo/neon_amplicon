@@ -13,7 +13,7 @@ library(tidyverse)
 # Microbe biomass: DP1.10104.001
 # Soil Microbe Marker Gene Sequences: DP1.10108.001
 # Soil Microbe Metagenome Sequences: DP1.10107.001
-# Soil Phyical Properties: DP1.10086.001
+# Soil Physical Properties: DP1.10086.001
 
 # Set API key
 NEON_TOKEN <- Sys.getenv(x = "NEON_TOKEN")
@@ -23,34 +23,6 @@ marker_genes <- loadByProduct(startdate = "2013-06", enddate = "2019-09",
                             dpID = 'DP1.10108.001', package = 'expanded', 
                             token = NEON_TOKEN, check.size = FALSE, nCores = 15)
 
-#==================================================================================
-# 16S rRNA gene PCR primer diagnostics
-#==================================================================================
-
-#get unique forward primers
-unique(unique(marker_genes$mmg_soilPcrAmplification_16S$forwardPrimer))
-# "GTGYCAGCMGCCGCGGTAA" is the modified earth microbiome project forward primer Parada, et al. 2016
-
-#make counts by 16S rRNA gene primer set, label them, barplot to see distribution of data 
-length(marker_genes$mmg_soilPcrAmplification_16S$forwardPrimer)
-#count each unique primer in the dataset
-forward_primer_dist <- as.data.frame(table(as.vector(marker_genes$mmg_soilPcrAmplification_16S$forwardPrimer)))
-primer_set <- c("Pro341Fi","Mislabeled_ITS", "New_EMP")
-
-#bind forward primer counts into a new dataframe to plot
-f_prime <- cbind(forward_primer_dist, primer_set)
-
-#ggplot call for primer data
-p<-ggplot(data=f_prime, aes(x=primer_set, y=Freq)) +
-  geom_bar(stat = "identity", fill="steelblue")+
-  theme_minimal()+theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  xlab(NULL)+labs(title = "Forward Primer Distribution")
-p
-
-#filter 16S data for CCTACGGGNBGCASCAG Pro341Fi, which targets the V3-V4 regions
-#of the 16S rRNA gene
-# ITS data only has one primer set so the rest of the data in the list should be
-  # filtered by the DNA sample ID's left in the 16S dataframe
 #==============================================================================
 # Filter Data by DNAsampleID's that match the 16S primers of interest
 #==============================================================================
@@ -87,7 +59,8 @@ names(its_filtered_markers) <- names(neon_marker_genes)
 system("mkdir ~/fastq") #fastq folder in home of rstudio user
 system("mkdir ~/fastq/its") #its fastq directory
 system("mkdir ~/fastq/16s") #16s fastq directory
-system("mkdir ~/test")
+
+
 #write out tables from ITS filtered data
 for(i in 1:length(its_filtered_markers)){
   write.csv(its_filtered_markers[[i]][1:5,],
@@ -105,9 +78,39 @@ zipsByURI(filepath = "/home/rstudio/test", savepath = "/home/rstudio/test",
 # url will need updating
 system('iput -rf /home/rstudio/fastq')
 
+#==================================================================================
+# 16S rRNA gene PCR primer diagnostics
+#==================================================================================
+
+#get unique forward primers
+unique(unique(marker_genes$mmg_soilPcrAmplification_16S$forwardPrimer))
+# "GTGYCAGCMGCCGCGGTAA" is the modified earth microbiome project forward primer Parada, et al. 2016
+
+#make counts by 16S rRNA gene primer set, label them, barplot to see distribution of data 
+length(marker_genes$mmg_soilPcrAmplification_16S$forwardPrimer)
+#count each unique primer in the dataset
+forward_primer_dist <- as.data.frame(table(as.vector(marker_genes$mmg_soilPcrAmplification_16S$forwardPrimer)))
+primer_set <- c("Pro341Fi","Mislabeled_ITS", "New_EMP")
+
+#bind forward primer counts into a new dataframe to plot
+f_prime <- cbind(forward_primer_dist, primer_set)
+
+#ggplot call for primer data
+p<-ggplot(data=f_prime, aes(x=primer_set, y=Freq)) +
+  geom_bar(stat = "identity", fill="steelblue")+
+  theme_minimal()+theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  xlab(NULL)+labs(title = "Forward Primer Distribution")
+p
+
+#filter 16S data for CCTACGGGNBGCASCAG Pro341Fi, which targets the V3-V4 regions
+#of the 16S rRNA gene
+# ITS data only has one primer set so the rest of the data in the list should be
+# filtered by the DNA sample ID's left in the 16S dataframe
+
 #==============================================================================
 #   Code Debugging Section
 #==============================================================================
+
 # debugging function to count data elements
 n2tab_count <-function(n){
   df <- as.data.frame(table(as.vector(n)))

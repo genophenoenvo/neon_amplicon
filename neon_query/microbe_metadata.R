@@ -77,18 +77,53 @@ write.csv(marker_genes$variables_10108, file = "~/fastq/variables.csv", row.name
 zipsByURI(filepath = "/home/rstudio/fastq", savepath = "/home/rstudio/fastq",
           unzip = FALSE, check.size = FALSE, saveZippedFiles = TRUE)
 
-#get microbial biomass metadata: DP1.10104.001
+#move files into sub folders
+#its mv #1
+system('mv *ITS*R[0-9].fastq.tar.gz its')
+#16s mv #1
+system('mv *16S*R[0-9].fastq.tar.gz 16s')
+#its mv #2
+system('mv *ITS_R[0-9]_fastq.tar.gz its')
+#16s mv #2
+system('mv *16S_R[0-9]_fastq.tar.gz 16s')
+#its mv #3
+system('mv *ITS_R[0-9].fastq.tar.gz its')
+#16s mv #3
+system('mv *16S_R[0-9].fastq.tar.gz 16s')
+
+#check to see if all the files have matching R1 & R2 files
+
+length(list.files(path = "~/fastq/16s/", pattern = "*_R1.*.gz", full.names = FALSE))
+length(list.files(path = "~/fastq/16s/", pattern = "*_R2.*.gz", full.names = FALSE))
+
+#==================================================================================
+# Get other microbial and soil metadata
+#==================================================================================
+
+#get microbial biomass metadata: DP1.10104.001; lipid analysis
 microbial_biomass <- loadByProduct(startdate = "2013-06", enddate = "2019-09",
                              dpID = 'DP1.10104.001', package = 'expanded', 
                          token = NEON_TOKEN, check.size = FALSE, nCores = 15)
 
-#get qPCR abundances of Archaea, Fungi, and Bacteria: DP1.10109.001
+if(dir.exists("~/neon_amplicon/biomass/")){
+  print("Warning: microbial biomass directory already exists!")
+}else{
+system('mkdir ~/neon_amplicon/biomass')
+}
+for(i in 1:length(microbial_biomass)){
+  write.csv(microbial_biomass[[i]],
+            file = paste0('~/neon_amplicon/biomass/', names(microbial_biomass)[[i]],'.csv'),
+            row.names = FALSE)
+}
+
+
+#get relative abundances of Archaea, Fungi, and Bacteria: DP1.10109.001; qPCR
 qpcr_abundances <- loadByProduct(startdate = "2013-06", enddate = "2019-09",
                       dpID = 'DP1.10109.001', package = 'expanded', 
                       token = NEON_TOKEN, check.size = FALSE, nCores = 15)
 
 
-#get soil physical properties DP1.10086.001
+#get soil physical properties DP1.10086.001; biogeochemical measurements
 soil_properties <- loadByProduct(startdate = "2013-06", enddate = "2019-09",
                                  dpID = 'DP1.10086.001', package = 'expanded', 
                                  token = NEON_TOKEN, check.size = FALSE, nCores = 15)

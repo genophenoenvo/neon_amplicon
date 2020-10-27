@@ -93,8 +93,23 @@ system('mv *16S_R[0-9].fastq.tar.gz 16s')
 
 #check to see if all the files have matching R1 & R2 files
 
-length(list.files(path = "~/fastq/16s/", pattern = "*_R1.*.gz", full.names = FALSE))
-length(list.files(path = "~/fastq/16s/", pattern = "*_R2.*.gz", full.names = FALSE))
+#16s sanity check
+length(list.files(path = "~/fastq/16s/", pattern = "BMI*", full.names = FALSE)) #670
+length(list.files(path = "~/fastq/16s/", pattern = "*_R1.*.gz", full.names = FALSE)) #335
+length(list.files(path = "~/fastq/16s/", pattern = "*_R2.*.gz", full.names = FALSE)) #335
+
+#its sanity check
+length(list.files(path = "~/fastq/its/", pattern = "BMI*", full.names = FALSE)) #1373
+length(list.files(path = "~/fastq/its/", pattern = "*_R1.*.gz", full.names = FALSE)) #687
+length(list.files(path = "~/fastq/its/", pattern = "*_R2.*.gz", full.names = FALSE)) #686
+its_r1<-list.files(path = "~/fastq/its/", pattern = "*_R1.*.gz", full.names = FALSE)
+its_r2<-list.files(path = "~/fastq/its/", pattern = "*_R2.*.gz", full.names = FALSE)
+
+its_r1_test <- gsub("(_R).*", replacement = "\\1", x = its_r1)
+its_r2_test <- gsub("(_R).*", replacement = "\\1", x = its_r2)
+setdiff(its_r1_test,its_r2_test)
+#[1] "BMI_B69RN_ITS_R1" does not have a mattching R2 file
+#executed: rm BMI_B69RN_ITS_R1_fastq.tar.gz in ~/fastq/its/
 
 #==================================================================================
 # Get other microbial and soil metadata

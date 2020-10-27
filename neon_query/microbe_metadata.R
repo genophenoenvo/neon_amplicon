@@ -73,15 +73,39 @@ for(i in 1:length(its_filtered_markers)){
 #write out variables file
 write.csv(marker_genes$variables_10108, file = "~/fastq/variables.csv", row.names=FALSE)
 
-#get fastq files
+#download fastq files
 zipsByURI(filepath = "/home/rstudio/fastq", savepath = "/home/rstudio/fastq",
           unzip = FALSE, check.size = FALSE, saveZippedFiles = TRUE)
 
-# move folder with irods to cache fastq data on CyVerse data store
-# url will need updating
-system('imkdir fastq')
-system('iput -KPbvrf /home/rstudio/fastq /iplant/home/rbartelme/fastq')
+#get microbial biomass metadata: DP1.10104.001
+microbial_biomass <- loadByProduct(startdate = "2013-06", enddate = "2019-09",
+                             dpID = 'DP1.10104.001', package = 'expanded', 
+                         token = NEON_TOKEN, check.size = FALSE, nCores = 15)
 
+#get qPCR abundances of Archaea, Fungi, and Bacteria: DP1.10109.001
+qpcr_abundances <- loadByProduct(startdate = "2013-06", enddate = "2019-09",
+                      dpID = 'DP1.10109.001', package = 'expanded', 
+                      token = NEON_TOKEN, check.size = FALSE, nCores = 15)
+
+
+#get soil physical properties DP1.10086.001
+soil_properties <- loadByProduct(startdate = "2013-06", enddate = "2019-09",
+                                 dpID = 'DP1.10086.001', package = 'expanded', 
+                                 token = NEON_TOKEN, check.size = FALSE, nCores = 15)
+
+
+
+
+
+################################################################################
+#                          _ _               
+#                         | | |              
+#      ___  __ _ _ __   __| | |__   _____  __
+#    / __|/ _` | '_ \ / _` | '_ \ / _ \ \/ /
+#    \__ \ (_| | | | | (_| | |_) | (_) >  < 
+#    |___/\__,_|_| |_|\__,_|_.__/ \___/_/\_\
+#                                        
+################################################################################
 #==================================================================================
 # 16S rRNA gene PCR primer diagnostics
 #==================================================================================

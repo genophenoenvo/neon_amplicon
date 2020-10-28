@@ -108,8 +108,30 @@ its_r2<-list.files(path = "~/fastq/its/", pattern = "*_R2.*.gz", full.names = FA
 its_r1_test <- gsub("(_R).*", replacement = "\\1", x = its_r1)
 its_r2_test <- gsub("(_R).*", replacement = "\\1", x = its_r2)
 setdiff(its_r1_test,its_r2_test)
-#[1] "BMI_B69RN_ITS_R1" does not have a mattching R2 file
+#[1] "BMI_B69RN_ITS_R1" does not have a matching R2 file
 #executed: rm BMI_B69RN_ITS_R1_fastq.tar.gz in ~/fastq/its/
+
+# remove weird hpc fastq folder hiercharies in 16s data 
+#16S R1 move
+system('cd ~/fastq/16s/hpc/home/minardsmitha/NEON/16S_ITS_2018/BTP49_16S_Jun_29_2018/RAW_Upload_to_BOX/R1/ && mv *.fastq ~/fastq/16s')
+#16S R2 move
+system('cd ~/fastq/16s/hpc/home/minardsmitha/NEON/16S_ITS_2018/BTP49_16S_Jun_29_2018/RAW_Upload_to_BOX/R2/ && mv *.fastq ~/fastq/16s')
+#remove hpc folder and subdirectories
+system('rm -r ~/fastq/16s/hpc')
+
+#find mismatched its files
+its_r1_fq <-list.files(path = "~/fastq/its/", pattern = "*_R1.fastq", full.names = FALSE)
+its_r2_fq <-list.files(path = "~/fastq/its/", pattern = "*_R2.fastq", full.names = FALSE)
+#test statements
+its_r1_fq_test <- gsub("(_R).*", replacement = "\\1", x = its_r1_fq)
+its_r2_fq_test <- gsub("(_R).*", replacement = "\\1", x = its_r2_fq)
+#set diff
+setdiff(its_r2_fq_test, its_r1_fq_test) #test which R2 read is missing an R1 read
+#capital L in file name BMI_PLate3WellE3_ITS_R1.fastq needs to be lowercase
+system('cd ~/fastq/its/ && mv BMI_PLate3WellE3_ITS_R1.fastq BMI_Plate3WellE3_ITS_R1.fastq')
+#remove BMI_Plate60WellG10_ITS_R2.fastq, lacks R1 file
+system('cd ~/fastq/its/ && rm BMI_Plate60WellG10_ITS_R2.fastq')
+
 
 #==================================================================================
 # Get other microbial and soil metadata

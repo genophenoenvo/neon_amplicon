@@ -8,8 +8,8 @@ ls *_R1.fastq | sed 's/_R1.fastq//' > samples
 
 #prompt user for inputs
 read -p 'Input Forward Primer: ' fwd
-read -p 'Input Reverse Primer:' rev
-read -p 'Specify cutadapt diagnostic output file name:' cud_out
+read -p 'Input Reverse Primer: ' rev
+read -p 'Specify cutadapt diagnostic output file name: ' cud_out
 
 # loop to trim primers
 for sample in $(cat samples)
@@ -19,7 +19,7 @@ do
     cutadapt -a $fwd \
     -A $rev \
     -m 215 -M 285 --discard-untrimmed \
-    -o ${sample}_R1_trimmed.fastq -p ${sample}_R1_trimmed.fastq \
-    ${sample}_R1.fastq ${sample}_R2.fq \
+    -o ${sample}_R1_trimmed.fastq -p ${sample}_R2_trimmed.fastq \
+    ${sample}_R1.fastq ${sample}_R2.fastq \
     >> ${cud_out}.txt 2>&1
 done

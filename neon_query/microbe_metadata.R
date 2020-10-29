@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+
 # Based on Dr. Lee Stanish's code
 # https://github.com/lstanish/SummitMicrobes/blob/master/getNEON_soil_microbes_data.R
 

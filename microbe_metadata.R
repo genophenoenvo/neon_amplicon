@@ -57,15 +57,38 @@ for(i in 1:length(its_filtered_markers)){
 }
 names(its_filtered_markers) <- names(neon_marker_genes)
 
+# remove demultiplexed tar directories straight off MiSeq File System
+
+#make new dataframe for debugging 
+raw_files <- as.data.frame(its_filtered_markers$mmg_soilRawDataFiles)
+
+#find tar directory rows
+tar_rows <- raw_files[grep("_fastq.tar", raw_files$rawDataFileName, perl = TRUE), ]
+
+#store row numbers of tar directories
+tar_rows <- as.numeric(row.names(tar_rows))
+
+# non-Tarball rows 
+not_tar <- raw_files[!row.names(raw_files) %in% tar_rows, ]
+#count nrows 
+nrow(not_weird_tar)
+
+#get only fastq.gz and fastq.tar.gz rows
+fq_gz_only <- raw_files[grep(".fastq.gz", raw_files$rawDataFileName, perl = TRUE), ]
+fq_tar_gz_only <- raw_files[grep("\\.fastq.tar.gz", raw_files$rawDataFileName, perl = TRUE), ]
+
+#store in list
+its_filtered_markers[[6]]<- rbind(fq_gz_only, fq_tar_gz_only)
+
 #make output directories
 if(dir.exists("~/fastq")){
   print("Warning: directory ~/fastq/ and subdirectories already exist!")
 }else{
 system("mkdir ~/fastq") #fastq folder in home of rstudio user
-system("mkdir ~/fastq/its") #its fastq directory
-system("mkdir ~/fastq/16s") #16s fastq directory
-system("mkdir ~/fastq/18s") #18s fastq directory
 }
+if(!dir.exists("~/fastq/its")) dir.create("~/fastq/its")
+if(!dir.exists("~/fastq/16s")) dir.create("~/fastq/16s")
+
 #write out tables from ITS filtered data
 for(i in 1:length(its_filtered_markers)){
   write.csv(its_filtered_markers[[i]],
@@ -79,20 +102,16 @@ write.csv(marker_genes$variables_10108, file = "~/fastq/variables.csv", row.name
 zipsByURI(filepath = "/home/rstudio/fastq", savepath = "/home/rstudio/fastq",
           unzip = FALSE, check.size = FALSE, saveZippedFiles = TRUE)
 
+#REWRITE WITH NEW FILES
 #move files into sub folders
-#its mv #1
-system('mv *ITS*R[0-9].fastq.tar.gz its')
-#16s mv #1
-system('mv *16S*R[0-9].fastq.tar.gz 16s')
-#its mv #2
-system('mv *ITS_R[0-9]_fastq.tar.gz its')
-#16s mv #2
-system('mv *16S_R[0-9]_fastq.tar.gz 16s')
-#its mv #3
-system('mv *ITS_R[0-9].fastq.tar.gz its')
-#16s mv #3
-system('mv *16S_R[0-9].fastq.tar.gz 16s')
 
+#move its
+system('cd ~/fastq && mv *ITS*.gz its')
+
+#16s move
+system('cd ~/fastq && mv *16S*.gz 16s')
+#decompress all *.tar.gz & .gz files in all subdirectories with a shell script
+system("./decompress_fastq.sh")
 #check to see if all the files have matching R1 & R2 files
 
 #16s sanity check

@@ -6,6 +6,19 @@ library(Biostrings)
 library(tidyverse)
 
 # 16S and ITS were sequenced using illumina MiSeq 2x300
+#===============================================================================
+#  Set-Up
+#===============================================================================
+
+# detect number of logical cores, requires parallel R library
+ncores <- detectCores(all.tests = TRUE, logical = TRUE)
+
+# set logical cores to use in multi-thread based on available
+if(ncores >= 48){
+  core_use <- 48
+}else{
+  core_use <- ncores
+}
 
 #===============================================================================
 # Begin ITS Amplicon Analysis of NEON Data

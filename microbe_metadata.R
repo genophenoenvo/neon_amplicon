@@ -20,10 +20,20 @@ library(tidyverse)
 # Set API key
 NEON_TOKEN <- Sys.getenv(x = "NEON_TOKEN")
 
+# detect number of logical cores, requires parallel R library
+ncores <- detectCores(all.tests = TRUE, logical = TRUE)
+
+# set logical cores to use in multi-thread based on available
+if(ncores >= 16){
+  core_use <- 16
+}else{
+  core_use <- ncores
+}
+
 # Fetch soil microbe marker gene sequence data
 marker_genes <- loadByProduct(startdate = "2013-06", enddate = "2019-09",
                             dpID = 'DP1.10108.001', package = 'expanded', 
-                            token = NEON_TOKEN, check.size = FALSE, nCores = 15)
+                            token = NEON_TOKEN, check.size = FALSE, nCores = core_use)
 
 #==============================================================================
 # Filter Data by DNAsampleID's that match the 16S primers of interest
@@ -51,34 +61,31 @@ neon_marker_genes[[i]] <- processed_marker_genes[[i]][processed_marker_genes[[i]
 names(neon_marker_genes) <- names(processed_marker_genes)
 
 # filter down to DNA samples with ITS sequences
+
 its_filtered_markers <- vector(mode = "list", length = 6)
 for(i in 1:length(its_filtered_markers)){
   its_filtered_markers[[i]] <- neon_marker_genes[[i]][neon_marker_genes[[i]]$dnaSampleID %in% neon_marker_genes$mmg_soilMarkerGeneSequencing_ITS$dnaSampleID,]
 }
 names(its_filtered_markers) <- names(neon_marker_genes)
 
-# remove demultiplexed tar directories straight off MiSeq File System
-
+#To remove demultiplexed tar directories straight off MiSeq File System
 #make new dataframe for debugging 
 raw_files <- as.data.frame(its_filtered_markers$mmg_soilRawDataFiles)
 
-#find tar directory rows
-tar_rows <- raw_files[grep("_fastq.tar", raw_files$rawDataFileName, perl = TRUE), ]
-
-#store row numbers of tar directories
-tar_rows <- as.numeric(row.names(tar_rows))
-
-# non-Tarball rows 
-not_tar <- raw_files[!row.names(raw_files) %in% tar_rows, ]
-#count nrows 
-nrow(not_weird_tar)
-
 #get only fastq.gz and fastq.tar.gz rows
 fq_gz_only <- raw_files[grep(".fastq.gz", raw_files$rawDataFileName, perl = TRUE), ]
-fq_tar_gz_only <- raw_files[grep("\\.fastq.tar.gz", raw_files$rawDataFileName, perl = TRUE), ]
 
-#store in list
-its_filtered_markers[[6]]<- rbind(fq_gz_only, fq_tar_gz_only)
+#only fastq.gz data
+gz_filtered <- vector(mode = "list", length = 6)
+#store only gzip fastq in rawdata list
+gz_filtered[[6]]<- fq_gz_only
+
+
+for(i in 1:5){
+  gz_filtered[[i]] <- its_filtered_markers[[i]][its_filtered_markers[[i]]$dnaSampleID %in% gz_filtered[[6]]$dnaSampleID,]
+}
+names(gz_filtered) <- names(its_filtered_markers)
+
 
 #make output directories
 if(dir.exists("~/fastq")){
@@ -90,9 +97,9 @@ if(!dir.exists("~/fastq/its")) dir.create("~/fastq/its")
 if(!dir.exists("~/fastq/16s")) dir.create("~/fastq/16s")
 
 #write out tables from ITS filtered data
-for(i in 1:length(its_filtered_markers)){
-  write.csv(its_filtered_markers[[i]],
-            file = paste0('~/fastq/', names(its_filtered_markers)[[i]],'.csv'),
+for(i in 1:length(gz_filtered)){
+  write.csv(gz_filtered[[i]],
+            file = paste0('~/fastq/', names(gz_filtered)[[i]],'.csv'),
             row.names = FALSE)
 }
 #write out variables file
@@ -114,44 +121,6 @@ system('cd ~/fastq && mv *16S*.gz 16s')
 system("./decompress_fastq.sh")
 #check to see if all the files have matching R1 & R2 files
 
-#16s sanity check
-length(list.files(path = "~/fastq/16s/", pattern = "BMI*", full.names = FALSE)) #670
-length(list.files(path = "~/fastq/16s/", pattern = "*_R1.*.gz", full.names = FALSE)) #335
-length(list.files(path = "~/fastq/16s/", pattern = "*_R2.*.gz", full.names = FALSE)) #335
-
-#its sanity check
-length(list.files(path = "~/fastq/its/", pattern = "BMI*", full.names = FALSE)) #1373
-length(list.files(path = "~/fastq/its/", pattern = "*_R1.*.gz", full.names = FALSE)) #687
-length(list.files(path = "~/fastq/its/", pattern = "*_R2.*.gz", full.names = FALSE)) #686
-its_r1<-list.files(path = "~/fastq/its/", pattern = "*_R1.*.gz", full.names = FALSE)
-its_r2<-list.files(path = "~/fastq/its/", pattern = "*_R2.*.gz", full.names = FALSE)
-
-its_r1_test <- gsub("(_R).*", replacement = "\\1", x = its_r1)
-its_r2_test <- gsub("(_R).*", replacement = "\\1", x = its_r2)
-setdiff(its_r1_test,its_r2_test)
-#[1] "BMI_B69RN_ITS_R1" does not have a matching R2 file
-#executed: rm BMI_B69RN_ITS_R1_fastq.tar.gz in ~/fastq/its/
-
-# remove weird hpc fastq folder hiercharies in 16s data 
-#16S R1 move
-system('cd ~/fastq/16s/hpc/home/minardsmitha/NEON/16S_ITS_2018/BTP49_16S_Jun_29_2018/RAW_Upload_to_BOX/R1/ && mv *.fastq ~/fastq/16s')
-#16S R2 move
-system('cd ~/fastq/16s/hpc/home/minardsmitha/NEON/16S_ITS_2018/BTP49_16S_Jun_29_2018/RAW_Upload_to_BOX/R2/ && mv *.fastq ~/fastq/16s')
-#remove hpc folder and subdirectories
-system('rm -r ~/fastq/16s/hpc')
-
-#find mismatched its files
-its_r1_fq <-list.files(path = "~/fastq/its/", pattern = "*_R1.fastq", full.names = FALSE)
-its_r2_fq <-list.files(path = "~/fastq/its/", pattern = "*_R2.fastq", full.names = FALSE)
-#test statements
-its_r1_fq_test <- gsub("(_R).*", replacement = "\\1", x = its_r1_fq)
-its_r2_fq_test <- gsub("(_R).*", replacement = "\\1", x = its_r2_fq)
-#set diff
-setdiff(its_r2_fq_test, its_r1_fq_test) #test which R2 read is missing an R1 read
-#capital L in file name BMI_PLate3WellE3_ITS_R1.fastq needs to be lowercase
-system('cd ~/fastq/its/ && mv BMI_PLate3WellE3_ITS_R1.fastq BMI_Plate3WellE3_ITS_R1.fastq')
-#remove BMI_Plate60WellG10_ITS_R2.fastq, lacks R1 file
-system('cd ~/fastq/its/ && rm BMI_Plate60WellG10_ITS_R2.fastq')
 
 
 #==================================================================================
@@ -161,7 +130,7 @@ system('cd ~/fastq/its/ && rm BMI_Plate60WellG10_ITS_R2.fastq')
 #get microbial biomass metadata: DP1.10104.001; lipid analysis
 microbial_biomass <- loadByProduct(startdate = "2013-06", enddate = "2019-09",
                              dpID = 'DP1.10104.001', package = 'expanded', 
-                         token = NEON_TOKEN, check.size = FALSE, nCores = 15)
+                         token = NEON_TOKEN, check.size = FALSE, nCores = core_use)
 
 if(dir.exists("~/neon_amplicon/biomass/")){
   print("Warning: microbial biomass directory already exists!")
@@ -178,13 +147,13 @@ for(i in 1:length(microbial_biomass)){
 #get relative abundances of Archaea, Fungi, and Bacteria: DP1.10109.001; qPCR
 qpcr_abundances <- loadByProduct(startdate = "2013-06", enddate = "2019-09",
                       dpID = 'DP1.10109.001', package = 'expanded', 
-                      token = NEON_TOKEN, check.size = FALSE, nCores = 15)
+                      token = NEON_TOKEN, check.size = FALSE, nCores = core_use)
 
 
 #get soil physical properties DP1.10086.001; biogeochemical measurements
 soil_properties <- loadByProduct(startdate = "2013-06", enddate = "2019-09",
                                  dpID = 'DP1.10086.001', package = 'expanded', 
-                                 token = NEON_TOKEN, check.size = FALSE, nCores = 15)
+                                 token = NEON_TOKEN, check.size = FALSE, nCores = core_use)
 
 
 

@@ -52,14 +52,22 @@ its_rev_orients <- all_orients(its_rev)
 #check for filtN directory, if not present create it
 filt_n <- file.path(its_path, "filtN")
 if(!dir.exists(filt_n)) dir.create(filt_n)
-
 #prefilter all ITS sequences with N's before primer trimming to speed up calcs
 fnFs_its_filtn <- file.path(its_path, "filtN", basename(fnFs_its))
 fnRs_its_filtn <- file.path(its_path, "filtN", basename(fnRs_its))
 filterAndTrim(fnFs_its, fnFs_its_filtn, fnRs_its, fnRs_its_filtn,
-                maxN = 0, multithread = TRUE)
-# error due to untar not having finished in the dir
-system('cd ~/fastq/its && for i in *.tar; do tar -xvf $i; done')
-# files pre-processed but error thrown, therefore debug with setdiff list files
-# Error message was...```Error in add(bin) : record does not start with '@'```
+                maxN = 0, multithread = core_use, verbose = TRUE)
+
+# list files in its directory and compare those to the ones in the filtered dir
+raw_its_fastq <- list.files(path = its_path, pattern = "fastq")
+nfiltered_its_fastq <- list.files(path = file.path(its_path, "filtN"), 
+                                  pattern = "fastq")
+bad_header_fastq <- setdiff(raw_its_fastq, nfiltered_its_fastq)
+
+# 6 files will not process due to line errors in the sequencing run, these are
+# most likely corrupted files and should not be processed further
+# offending files are stored in the variable bad_header_fastq & the rest of the
+# files will be processed further
+
+
 

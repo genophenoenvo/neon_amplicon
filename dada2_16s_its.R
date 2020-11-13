@@ -69,5 +69,119 @@ bad_header_fastq <- setdiff(raw_its_fastq, nfiltered_its_fastq)
 # offending files are stored in the variable bad_header_fastq & the rest of the
 # files will be processed further
 
+#check distribution of the orientation of primers in the first sample
+primerHits <- function(primer, fn) {
+  # Counts number of reads in which the primer is found
+  nhits <- vcountPattern(primer, sread(readFastq(fn)), fixed = FALSE)
+  return(sum(nhits > 0))
+}
+rbind(FWD.ForwardReads = sapply(its_fwd_orients, primerHits, fn = fnFs_its_filtn[[4]]), 
+      FWD.ReverseReads = sapply(its_fwd_orients, primerHits, fn = fnRs_its_filtn[[4]]), 
+      REV.ForwardReads = sapply(its_rev_orients, primerHits, fn = fnFs_its_filtn[[4]]), 
+      REV.ReverseReads = sapply(its_rev_orients, primerHits, fn = fnRs_its_filtn[[4]]))
+
+#cutadapt sanity check
+system2(command = "cutadapt", args = "--version")
+
+# take n filtered data and trim ITS primers
+
+#create directory for cutadapt output
+path_cut <- file.path(filt_n, "cutadapt")
+if(!dir.exists(path_cut)) dir.create(path_cut)
+
+#prepare file outputs
+fnFs_its_cut <- file.path(path_cut, basename(fnFs_its_filtn))
+fnRs_its_cut <- file.path(path_cut, basename(fnRs_its_filtn))
+
+#store reverse compliments of primers as strings
+its_fwd_rc <- dada2::rc(its_fwd)
+its_rev_rc <- dada2::rc(its_rev)
+
+# Trim FWD and the reverse-complement of REV off of R1 (forward reads)
+r1_flags <- paste("-g", its_fwd, "-a", its_rev_rc) 
+# Trim REV and the reverse-complement of FWD off of R2 (reverse reads)
+r2_flags <- paste("-G", its_rev, "-A", its_fwd_rc) 
+
+for(i in seq_along(fnFs_its_filtn)){
+  system2(command = "cutadapt", args = c(r1_flags, r2_flags, "-n", 2, 
+                    # -n2 required to remove both primers from reads
+                    "-j", core_use, #multithread with cores detected in first lines
+                    "-o", fnFs_its_cut[i], "-p", fnRs_its_cut[i], # output files
+                    fnFs_its_filtn[i], fnRs_its_filtn[i])) # input files
+}
+
+# get paths for cutadapt trimmed files
+cutFs_its <- sort(list.files(path_cut, pattern = "_R1.fastq", full.names = TRUE))
+cutRs_its <- sort(list.files(path_cut, pattern = "_R2.fastq", full.names = TRUE))
+
+#extract sample name from fwd read file names
+get_sample_name <- function(fname) strsplit(basename(fname), "_R1.fastq")[[1]][1]
+its_sample_names <- unname(sapply(cutFs_its, get_sample_name))
+
+#sanity check
+head(its_sample_names)
+head(cutFs_its)
+
+#check read quality before filtering and trimming
+plotQualityProfile(cutFs_its[1:2])
+plotQualityProfile(cutRs_its[1:2])
+
+#filter and trim output directory creation
+its_filt_path <- file.path(path_cut, "filtered")
+if(!dir.exists(its_filt_path)) dir.create(its_filt_path)
+
+#filtered file output assignments
+filtFs_its <- file.path(its_filt_path, basename(cutFs_its))
+filtRs_its <- file.path(its_filt_path, basename(cutRs_its))
+
+#filter and trim reads
+its_filt_out <- filterAndTrim(cutFs_its, filtFs_its, cutRs_its, filtRs_its, 
+                     maxN = 0, maxEE = c(2, 2), truncQ = 2, minLen = 50,
+                     rm.phix = TRUE, compress = TRUE, multithread = core_use)
+
+#sanity check output
+head(its_filt_out)
+
+#since it's 2x300bp chemistry, and multiplexed, 
+  # it's not surprising to lose 50% of the reads
+
+#learn forward error rates
+errF_its <- learnErrors(filtFs_its, multithread = core_use)
+
+#learn reverse error rates
+errR_its <- learnErrors(filtRs_its, multithread = core_use)
+
+# need to reset filtered file names & paths,
+# since 3 samples were dropped due to quality
+filtered_fwd_its <- list.files(path = its_filt_path,
+                               pattern = "R1.fastq", full.names = TRUE)
+filtered_rev_its <- list.files(path = its_filt_path,
+                               pattern = "R2.fastq", full.names = TRUE)
+
+#dereplicate reads
+derepFs_its <- derepFastq(filtered_fwd_its, verbose = TRUE)
+derepRs_its <- derepFastq(filtered_rev_its, verbose = TRUE)
+# Name the derep-class objects by the sample names
+# replace old sample character vector
+its_sample_names <- unname(sapply(filtered_fwd_its, get_sample_name))
+
+#assign sample names to dereplicated reads
+names(derepFs_its) <- its_sample_names
+names(derepRs_its) <- its_sample_names
+
+#sample inference
+dadaFs_its <- dada(derepFs_its, err = errF_its, multithread = core_use)
+dadaRs_its <- dada(derepRs_its, err = errR_its, multithread = core_use)
+
+#merged paired reads
+merged_its <- mergePairs(dadaFs_its, derepFs_its, dadaRs_its,
+                            derepRs_its, verbose=TRUE)
+
+
+
+
+
+
+
 
 

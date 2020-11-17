@@ -55,7 +55,7 @@ if(!dir.exists(filt_n)) dir.create(filt_n)
 #prefilter all ITS sequences with N's before primer trimming to speed up calcs
 fnFs_its_filtn <- file.path(its_path, "filtN", basename(fnFs_its))
 fnRs_its_filtn <- file.path(its_path, "filtN", basename(fnRs_its))
-filterAndTrim(fnFs_its, fnFs_its_filtn, fnRs_its, fnRs_its_filtn,
+filt_out <- filterAndTrim(fnFs_its, fnFs_its_filtn, fnRs_its, fnRs_its_filtn,
                 maxN = 0, multithread = core_use, verbose = TRUE)
 
 # list files in its directory and compare those to the ones in the filtered dir
@@ -75,10 +75,10 @@ primerHits <- function(primer, fn) {
   nhits <- vcountPattern(primer, sread(readFastq(fn)), fixed = FALSE)
   return(sum(nhits > 0))
 }
-rbind(FWD.ForwardReads = sapply(its_fwd_orients, primerHits, fn = fnFs_its_filtn[[4]]), 
-      FWD.ReverseReads = sapply(its_fwd_orients, primerHits, fn = fnRs_its_filtn[[4]]), 
-      REV.ForwardReads = sapply(its_rev_orients, primerHits, fn = fnFs_its_filtn[[4]]), 
-      REV.ReverseReads = sapply(its_rev_orients, primerHits, fn = fnRs_its_filtn[[4]]))
+rbind(FWD.ForwardReads = sapply(its_fwd_orients, primerHits, fn = fnFs_its_filtn[[20]]), 
+      FWD.ReverseReads = sapply(its_fwd_orients, primerHits, fn = fnRs_its_filtn[[20]]), 
+      REV.ForwardReads = sapply(its_rev_orients, primerHits, fn = fnFs_its_filtn[[20]]), 
+      REV.ReverseReads = sapply(its_rev_orients, primerHits, fn = fnRs_its_filtn[[20]]))
 
 #cutadapt sanity check
 system2(command = "cutadapt", args = "--version")
@@ -106,6 +106,7 @@ for(i in seq_along(fnFs_its_filtn)){
   system2(command = "cutadapt", args = c(r1_flags, r2_flags, "-n", 2, 
                     # -n2 required to remove both primers from reads
                     "-j", core_use, #multithread with cores detected in first lines
+                    "--discard-untrimmed", #discard untrimmed reads
                     "-o", fnFs_its_cut[i], "-p", fnRs_its_cut[i], # output files
                     fnFs_its_filtn[i], fnRs_its_filtn[i])) # input files
 }
@@ -114,9 +115,17 @@ for(i in seq_along(fnFs_its_filtn)){
 cutFs_its <- sort(list.files(path_cut, pattern = "_R1.fastq", full.names = TRUE))
 cutRs_its <- sort(list.files(path_cut, pattern = "_R2.fastq", full.names = TRUE))
 
+#sanity check for primer cutting
+rbind(FWDp_ForwardReads = sapply(its_fwd_orients, primerHits, fn = cutFs_its[[20]]), 
+      FWDp_ReverseReads = sapply(its_fwd_orients, primerHits, fn = cutRs_its[[20]]), 
+      REVp_ForwardReads = sapply(its_rev_orients, primerHits, fn = cutFs_its[[20]]), 
+      REVp_ReverseReads = sapply(its_rev_orients, primerHits, fn = cutRs_its[[20]]))
+
+
+
 #extract sample name from fwd read file names
 get_sample_name <- function(fname) strsplit(basename(fname), "_R1.fastq")[[1]][1]
-its_sample_names <- unname(sapply(cutFs_its, get_sample_name))
+its_original_sample_names <- unname(sapply(cutFs_its, get_sample_name))
 
 #sanity check
 head(its_sample_names)
@@ -177,11 +186,35 @@ dadaRs_its <- dada(derepRs_its, err = errR_its, multithread = core_use)
 merged_its <- mergePairs(dadaFs_its, derepFs_its, dadaRs_its,
                             derepRs_its, verbose=TRUE)
 
+#make sequencing table
+seqtab_its <- makeSequenceTable(merged_its)
+dim(seqtab_its)
+
+#remove chimeras
+nochimera_seqtab_its <- removeBimeraDenovo(seqtab_its, method = "consensus",
+                                           multithread = core_use, verbose = TRUE)
 
 
+dim(seqtab_its)
+distribution_its <- as.data.frame(table(nchar(getSequences(nochimera_seqtab_its))))
+colnames(distribution_its) <- c("read_length", "counts")
+barplot(height = distribution_its$counts, names.arg = distribution_its$read_length,
+        xlab = "Merged Read Length", ylab = "Frequency", )
+p<-ggplot(data=distribution_its, aes(x=read_length, y=counts)) +
+  geom_bar(stat="identity")
+p+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
 
-
-
-
-
+#track reads through pipeline 
+getN <- function(x) sum(getUniques(x))
+track <- cbind(sapply(dadaFs_its, getN), sapply(dadaRs_its, getN),
+               sapply(merged_its, getN), rowSums(nochimera_seqtab_its))
+# If processing a single sample, remove the sapply calls: e.g. replace
+# sapply(dadaFs, getN) with getN(dadaFs)
+colnames(track) <- c("denoisedF", "denoisedR", "merged", 
+                     "nonchim")
+rownames(track) <- its_sample_names
+head(track)
+tracked <- as.data.frame(cbind(track, track[,4]/track[,1]))
+colnames(tracked)[5] <- "percent_filtered_reads"
+tracked

@@ -243,5 +243,42 @@ cut_16s <- file.path(path_16s, "cutadapt")
 if(!dir.exists(cut_16s)) dir.create(cut_16s)
 
 
+#prepare file outputs
+fnFs_16s_cut <- file.path(cut_16s, basename(fnFs_16s))
+fnRs_16s_cut <- file.path(cut_16s, basename(fnRs_16s))
+
+#store reverse compliments of primers as strings
+fwd_16s_rc <- dada2::rc(fwd_16s)
+rev_16s_rc <- dada2::rc(rev_16s)
+
+# Trim FWD and the reverse-complement of REV off of R1 (forward reads)
+r1_flags <- paste("-g", fwd_16s, "-a", rev_16s_rc) 
+# Trim REV and the reverse-complement of FWD off of R2 (reverse reads)
+r2_flags <- paste("-G", rev_16s, "-A", fwd_16s_rc) 
+
+for(i in seq_along(fnFs_16s)){
+  system2(command = "cutadapt", args = c(r1_flags, r2_flags, "-n", 2, 
+                                         # -n2 required to remove both primers from reads
+                                         "-j", core_use, #multithread with cores detected in first lines
+                                         "-o", fnFs_16s_cut[i], "-p", fnRs_16s_cut[i], # output files
+                                         fnFs_16s[i], fnRs_16s[i])) # input files
+}
+
+# get paths for cutadapt trimmed files
+cutFs_16s <- sort(list.files(cut_16s, pattern = "_R1.fastq", full.names = TRUE))
+cutRs_16s <- sort(list.files(cut_16s, pattern = "_R2.fastq", full.names = TRUE))
+
+#sanity check for primer cutting
+rbind(FWDp_ForwardReads = sapply(fwd_16s_orients, primerHits, fn = fnFs_16s_cut[[1]]), 
+      FWDp_ReverseReads = sapply(fwd_16s_orients, primerHits, fn = fnRs_16s_cut[[1]]), 
+      REVp_ForwardReads = sapply(rev_16s_orients, primerHits, fn = fnFs_16s_cut[[1]]), 
+      REVp_ReverseReads = sapply(rev_16s_orients, primerHits, fn = fnRs_16s_cut[[1]]))
+#pre-cutting primer hits
+rbind(FWDp_ForwardReads = sapply(fwd_16s_orients, primerHits, fn = fnFs_16s[[1]]), 
+      FWDp_ReverseReads = sapply(fwd_16s_orients, primerHits, fn = fnRs_16s[[1]]), 
+      REVp_ForwardReads = sapply(rev_16s_orients, primerHits, fn = fnFs_16s[[1]]), 
+      REVp_ReverseReads = sapply(rev_16s_orients, primerHits, fn = fnRs_16s[[1]]))
+
+#not a lot of primer hits, despite their listing in the database, are the seqs pretrimmed?
 
 

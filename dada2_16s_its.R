@@ -218,3 +218,30 @@ head(track)
 tracked <- as.data.frame(cbind(track, track[,4]/track[,1]))
 colnames(tracked)[5] <- "percent_filtered_reads"
 tracked
+
+#===============================================================================
+# Begin 16S Amplicon Analysis of NEON Data
+#===============================================================================
+
+#set relative path for its fastq files
+path_16s <- "~/fastq/16s"
+
+#list full paths for forward and reverse reads, sorting alphanumerically 
+fnFs_16s <- sort(list.files(path_16s, pattern = "_R1.fastq", full.names = TRUE))
+fnRs_16s <- sort(list.files(path_16s, pattern = "_R2.fastq", full.names = TRUE))
+
+#input forward and reverse 16S primers from NEON ***need to update values to V3-V4
+fwd_16s <- "CTTGGTCATTTAGAGGAAGTAA" #forward
+rev_16s <- "GCTGCGTTCTTCATCGATGC" #reverse
+
+#find all orientations for each 16S primer
+fwd_16s_orients <- all_orients(fwd_16s)
+rev_16s_orients <- all_orients(rev_16s)
+
+#create output directory for cutadapt
+cut_16s <- file.path(path_16s, "cutadapt")
+if(!dir.exists(cut_16s)) dir.create(cut_16s)
+
+
+
+

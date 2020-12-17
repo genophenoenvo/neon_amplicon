@@ -82,6 +82,7 @@ COPY supervisor-rstudio.conf /etc/supervisor/conf.d/rstudio.conf
 USER rstudio
 RUN mkdir /home/rstudio/.irods/
 RUN echo '{"irods_host": "data.cyverse.org", "irods_port": 1247, "irods_user_name": "", "irods_zone_name": "iplant"}' >> /home/rstudio/.irods/irods_environment.json
+RUN echo 'export PS1="[\u@cyverse] \w # "' >> /home/rstudio/.bash_profile
 USER root
 
 

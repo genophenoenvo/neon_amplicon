@@ -79,10 +79,10 @@ RUN mkdir /home/rstudio/.irods/
 # irods json config file
 RUN echo '{"irods_host": "data.cyverse.org", "irods_port": 1247, "irods_user_name": "", "irods_zone_name": "iplant"}' >> /home/rstudio/.irods/irods_environment.json
 
-#------------------------#
-# Configs for deployment #
-#------------------------#
 
+# Configs for deployment
+
+USER root
 ENV PASSWORD "rstudio1"
 RUN bash /etc/cont-init.d/userconf
 

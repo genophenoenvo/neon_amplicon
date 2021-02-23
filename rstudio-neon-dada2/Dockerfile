@@ -100,11 +100,11 @@ ENV REDIRECT_URL "http://localhost/"
 ARG LOCAL_USER=rstudio
 ARG PRIV_CMDS='/bin/ch*,/bin/cat,/bin/gunzip,/bin/tar,/bin/mkdir,/bin/ps,/bin/mv,/bin/cp,/usr/bin/apt*,/usr/bin/pip*,/bin/yum'
 
-RUN if [ -x /usr/bin/apt ]; then \
+ RUN if [ -x /usr/bin/apt ]; then \
       apt-get update && apt-get -y install sudo && rm -rf /var/lib/apt/lists/*; \
     elif [ -x /bin/yum ]; then \
       yum -y update && yum -y install sudo && yum clean all; \
-    fi
+   fi
 
 #eliminate password at login
 RUN echo "$LOCAL_USER	ALL=NOPASSWD: $PRIV_CMDS" >> /etc/sudoers

@@ -30,7 +30,7 @@ RUN R -e 'install.packages(c("BiocManager","neonUtilities", "vegan", "zetadiv", 
 # set BiocManager Version
 RUN R -e 'BiocManager::install(version = "3.11", ask = FALSE)'
 
-# install rhdf5 for neonUtilitie	s
+# install rhdf5 for neonUtilities
 RUN R -e 'BiocManager::install("rhdf5")'
 # install dada2 with biocmanager version 3.11
 RUN R -e 'BiocManager::install("dada2", version = "3.11")'
@@ -65,6 +65,8 @@ RUN conda init bash \
   && conda config --add channels conda-forge \
   && conda install cutadapt \
   && echo 'alias cutadapt = "conda run --prefix '/home/rstudio/miniconda3/envs/cutadaptenv' cutadapt"'
+
+COPY profile .profile
 
 USER root
 ENTRYPOINT ["/usr/local/bin/run.sh"]

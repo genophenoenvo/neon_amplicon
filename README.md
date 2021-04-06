@@ -14,9 +14,9 @@ This analysis generally follows Mike Lee's suggested [dada2](https://benjjneb.gi
 
 ### Pulling the container from dockerhub
 
-The Docker container for these analyses can be run on CyVerse VICE as an application, or you may pull the container onto any compatible machine with:
+The Docker container for these analyses can be run on CyVerse VICE as an application, or you may pull the container image onto any compatible machine with:
 
-`docker pull cyversevice/rstudio-neon-dada2:1.1`
+`docker pull cyversevice/rstudio-neon-dada2:1.4`
 
 ### Running the container image
 

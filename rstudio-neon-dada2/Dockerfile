@@ -15,16 +15,19 @@ LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.version=$VERSION \
       org.label-schema.schema-version="1.0.0"
 
-MAINTAINER "Ryan Bartelme rbartelme@arizona.edu"
+LABEL maintainer="Ryan Bartelme rbartelme@arizona.edu"
 # This image builds off the rocker tidyverse image of rstudio
 # and adds: cutadapt for primer trimming fastq files,
 # as well as NEON api access to download fastq files,
 # and dada2 for generating ASV's from fastqs
 
+# ubuntu setup
+RUN apt-get update && apt-get install -y dialog apt-utils tzdata
+
 # install additonal R libraries
 USER root
 RUN R -e 'install.packages(c("BiocManager","neonUtilities", "vegan", "zetadiv", \
-          "deblur", "decontam", "R.utils"), repos = "https://cloud.r-project.org/", \
+          "deblur", "decontam", "R.utils", "testthat"), repos = "https://cloud.r-project.org/", \
           dependencies = TRUE)'
 
 # set BiocManager Version
@@ -41,8 +44,8 @@ RUN R -e 'BiocManager::install("phyloseq")'
 # install geoNEON
 RUN R -e 'devtools::install_github("NEONScience/NEON-geolocation/geoNEON", dependencies=TRUE)'
 
-# install python 3 setup utilities pip3 and tzdata
-RUN apt-get update && apt-get install -y dialog apt-utils tzdata
+#install neonMicrobe
+RUN R -e 'devtools::install_github("claraqin/neonMicrobe", dependencies=TRUE)'
 
 # setup rstudio user for conda/python/cutadapt
 USER rstudio
@@ -63,7 +66,7 @@ RUN conda init bash \
   && conda config --add channels defaults \
   && conda config --add channels bioconda \
   && conda config --add channels conda-forge \
-  && conda install cutadapt \
+  && conda install -y cutadapt \
   && echo 'alias cutadapt = "conda run --prefix '/home/rstudio/miniconda3/envs/cutadaptenv' cutadapt"'
 
 COPY profile .profile
